@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Croquet Lawn Watering Plan</title>
+<style>
+  :root {
+    --lawn: #5fae55;
+    --lawn-dark: #35773a;
+    --path: #c9c9c9;
+    --path-edge: #999;
+    --spray: rgba(54, 151, 230, 0.28);
+    --spray-strong: rgba(54, 151, 230, 0.42);
+    --dry: rgba(255, 179, 46, 0.7);
+    --dry-edge: rgba(232, 116, 21, 0.85);
+    --ink: #1f2933;
+    --panel: #ffffff;
+    --soft: #eef7ee;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: #f4f7f4;
+  }
+
+  header {
+    padding: 1rem;
+    background: #23482a;
+    color: white;
+  }
+
+  header h1 {
+    margin: 0 0 0.25rem;
+    font-size: clamp(1.35rem, 3vw, 2rem);
+  }
+
+  header p {
+    margin: 0;
+    max-width: 75rem;
+    line-height: 1.45;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(20rem, 1fr) 24rem;
+    gap: 1rem;
+    padding: 1rem;
+    max-width: 88rem;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid #dbe3db;
+    border-radius: 0.85rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+  }
+
+  .visual-card {
+    padding: 1rem;
+  }
+
+  .side {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+
+  h2, h3 {
+    margin: 0 0 0.65rem;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
+
+  .controls {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .control-row {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  label {
+    font-weight: 700;
+    font-size: 0.92rem;
+  }
+
+  select, button {
+    font: inherit;
+    border-radius: 0.55rem;
+    border: 1px solid #b8c4b8;
+    background: white;
+    padding: 0.55rem 0.65rem;
+  }
+
+  button {
+    cursor: pointer;
+    font-weight: 700;
+    background: #23482a;
+    color: white;
+    border-color: #23482a;
+  }
+
+  button.secondary {
+    color: var(--ink);
+    background: #f7faf7;
+    border-color: #b8c4b8;
+  }
+
+  .toggle-grid {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .check {
+    display: flex;
+    gap: 0.55rem;
+    align-items: center;
+    font-weight: 600;
+  }
+
+  .check input {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .stat {
+    padding: 0.7rem;
+    border-radius: 0.65rem;
+    background: var(--soft);
+    border: 1px solid #d6e8d5;
+  }
+
+  .stat b {
+    display: block;
+    font-size: 1.05rem;
+  }
+
+  .stat span {
+    font-size: 0.82rem;
+  }
+
+  #instructions {
+    line-height: 1.45;
+  }
+
+  #instructions strong {
+    color: #23482a;
+  }
+
+  .explain {
+    display: grid;
+    gap: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.9rem;
+    margin-top: 0.65rem;
+    font-size: 0.88rem;
+  }
+
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .swatch {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.2rem;
+    border: 1px solid rgba(0,0,0,0.18);
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 78vh;
+  }
+
+  .path {
+    fill: var(--path);
+    stroke: var(--path-edge);
+    stroke-width: 0.3;
+  }
+
+  .lawn {
+    fill: var(--lawn);
+    stroke: var(--lawn-dark);
+    stroke-width: 0.35;
+  }
+
+  .grid-line {
+    stroke: rgba(255,255,255,0.38);
+    stroke-width: 0.08;
+  }
+
+  .marker-line {
+    stroke: rgba(35,72,42,0.45);
+    stroke-width: 0.12;
+    stroke-dasharray: 0.5 0.5;
+  }
+
+  .spray {
+    fill: var(--spray);
+    stroke: rgba(33, 119, 190, 0.55);
+    stroke-width: 0.18;
+  }
+
+  .spray.inner {
+    fill: var(--spray-strong);
+  }
+
+  .sprinkler {
+    fill: #1f2933;
+    stroke: white;
+    stroke-width: 0.22;
+  }
+
+  .sprinkler-label {
+    font-size: 1.05px;
+    font-weight: 800;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: white;
+    stroke-width: 0.22;
+    stroke-linejoin: round;
+  }
+
+  .tiny {
+    font-size: 0.85px;
+    font-weight: 700;
+    fill: #17201a;
+    paint-order: stroke;
+    stroke: white;
+    stroke-width: 0.16;
+    stroke-linejoin: round;
+  }
+
+  .axis-label {
+    font-size: 0.95px;
+    fill: #314235;
+    font-weight: 700;
+  }
+
+  .dry {
+    fill: var(--dry);
+    stroke: var(--dry-edge);
+    stroke-width: 0.12;
+  }
+
+  .corner-dry {
+    fill: rgba(255, 143, 34, 0.76);
+    stroke: rgba(176, 72, 11, 0.9);
+    stroke-width: 0.16;
+  }
+
+  .arrow {
+    stroke: #111;
+    stroke-width: 0.32;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+  }
+
+  .ground-peg {
+    fill: white;
+    stroke: #111;
+    stroke-width: 0.2;
+  }
+
+  .wind-arrow {
+    stroke: #6b3f00;
+    stroke-width: 0.28;
+    marker-end: url(#arrowHead);
+  }
+
+  .dimmed {
+    opacity: 0.32;
+  }
+
+  @media (max-width: 58rem) {
+    main {
+      grid-template-columns: 1fr;
+    }
+
+    svg {
+      max-height: none;
+    }
+  }
+
+  @media print {
+    body {
+      background: white;
+    }
+
+    header, .controls {
+      break-inside: avoid;
+    }
+
+    main {
+      display: block;
+      max-width: none;
+      padding: 0.4rem;
+    }
+
+    .card {
+      box-shadow: none;
+      border-color: #aaa;
+      margin-bottom: 0.6rem;
+    }
+
+    button, select, input {
+      display: none;
+    }
+
+    svg {
+      max-height: none;
+    }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Croquet Lawn Watering Plan</h1>
+  <p>An explanatory visual guide for volunteers. It favours clarity over engineering precision: the blue areas show the intended watering pattern, not a calibrated hydraulic simulation.</p>
+</header>
+
+<main>
+  <section class="card visual-card">
+    <svg id="lawnSvg" viewBox="-4 -4 46 46" role="img" aria-label="Croquet lawn watering visualisation">
+      <defs>
+        <marker id="arrowHead" markerWidth="5" markerHeight="5" refX="4.2" refY="2.5" orient="auto">
+          <path d="M0,0 L5,2.5 L0,5 Z" fill="#111"></path>
+        </marker>
+        <marker id="whiteArrowHead" markerWidth="5" markerHeight="5" refX="4.2" refY="2.5" orient="auto">
+          <path d="M0,0 L5,2.5 L0,5 Z" fill="#fff" stroke="#111" stroke-width="0.4"></path>
+        </marker>
+      </defs>
+
+      <rect class="path" x="-3" y="-3" width="44" height="44" rx="1"></rect>
+      <rect class="lawn" x="0" y="0" width="38" height="38"></rect>
+
+      <g id="baseLayer"></g>
+      <g id="dryLayer"></g>
+      <g id="sprayLayer"></g>
+      <g id="sprinklerLayer"></g>
+      <g id="markerLayer"></g>
+      <g id="textLayer"></g>
+    </svg>
+
+    <div class="legend">
+      <span><i class="swatch" style="background: var(--lawn)"></i>Lawn</span>
+      <span><i class="swatch" style="background: var(--path)"></i>Paths</span>
+      <span><i class="swatch" style="background: rgba(54,151,230,0.35)"></i>Spray</span>
+      <span><i class="swatch" style="background: rgba(255,179,46,0.7)"></i>Likely dry edge/corner areas</span>
+      <span><i class="swatch" style="background: #1f2933"></i>Sprinkler head</span>
+    </div>
+  </section>
+
+  <aside class="side">
+    <section class="card panel controls">
+      <h2>Controls</h2>
+
+      <div class="control-row">
+        <label for="planSelect">Plan</label>
+        <select id="planSelect">
+          <option value="existing">Existing alternate five-sprinkler plan</option>
+          <option value="new">New four-sprinkler edge-and-inner plan</option>
+        </select>
+      </div>
+
+      <div class="control-row">
+        <label for="daySelect">Day</label>
+        <select id="daySelect">
+          <option value="0">Mon</option>
+          <option value="1">Tue</option>
+          <option value="2">Wed</option>
+          <option value="3">Thu</option>
+          <option value="4">Fri</option>
+          <option value="5">Sat</option>
+          <option value="6">Sun</option>
+        </select>
+      </div>
+
+      <button id="playBtn" type="button">Play animation</button>
+
+      <div class="toggle-grid">
+        <label class="check"><input id="windToggle" type="checkbox" checked> Show wind effect</label>
+        <label class="check"><input id="dryToggle" type="checkbox" checked> Show dry patches</label>
+        <label class="check"><input id="overlapToggle" type="checkbox" checked> Show spray overlap</label>
+      </div>
+    </section>
+
+    <section class="card panel">
+      <h2>Tonight's Instructions</h2>
+      <div id="instructions"></div>
+    </section>
+
+    <section class="card panel">
+      <h2>Water Volumes</h2>
+      <div class="stats">
+        <div class="stat"><b>10.6 L/min</b><span>Measured flow rate</span></div>
+        <div class="stat"><b>954 L</b><span>Edge sprinkler: 90 min</span></div>
+        <div class="stat"><b>1,908 L</b><span>Inner sprinkler: 180 min</span></div>
+        <div class="stat"><b>5,724 L</b><span>One night total</span></div>
+        <div class="stat"><b>34,344 L</b><span>Six nights per week</span></div>
+        <div class="stat"><b>23.8 mm</b><span>Weekly depth over 1,444 m²</span></div>
+      </div>
+    </section>
+
+    <section class="card panel explain">
+      <h2>Plain-English Explanation</h2>
+      <p><strong>Existing plan problem:</strong> the centre and mid-lawn receive reasonable overlap, but the edge bands and corners only receive the weak outer edge of circular spray.</p>
+      <p><strong>New plan benefit:</strong> edge sprinklers are placed near the boundary and spray inward, so the lawn edge is watered directly with less waste onto paths.</p>
+      <p><strong>Timing:</strong> half-circle edge heads cover about half the area, so they run for 90 minutes. Full-circle inner heads run for 180 minutes.</p>
+      <p><strong>Wind:</strong> alternating East-West and North-South lines helps average out coastal wind bias through the week.</p>
+    </section>
+  </aside>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const SIZE = 38;
+  const RADIUS = 10;
+  const FLOW_LPM = 10.6;
+  const EDGE_MIN = 90;
+  const INNER_MIN = 180;
+  const EDGE_L = EDGE_MIN * FLOW_LPM;
+  const INNER_L = INNER_MIN * FLOW_LPM;
+  const NIGHT_L = 2 * EDGE_L + 2 * INNER_L;
+  const WEEK_L = NIGHT_L * 6;
+  const AREA = SIZE * SIZE;
+  const WEEK_MM = WEEK_L / AREA;
+
+  // Main calculations used in the labels:
+  // 106 litres in 10 minutes = 10.6 L/min.
+  // 25 mm target means 25 L per square metre.
+  // New plan total = two edge heads at 90 min plus two inner heads at 180 min.
+  console.log({ EDGE_L, INNER_L, NIGHT_L, WEEK_L, AREA, WEEK_MM });
+
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const planSelect = document.getElementById("planSelect");
+  const daySelect = document.getElementById("daySelect");
+  const playBtn = document.getElementById("playBtn");
+  const windToggle = document.getElementById("windToggle");
+  const dryToggle = document.getElementById("dryToggle");
+  const overlapToggle = document.getElementById("overlapToggle");
+  const instructions = document.getElementById("instructions");
+
+  const layers = {
+    base: document.getElementById("baseLayer"),
+    dry: document.getElementById("dryLayer"),
+    spray: document.getElementById("sprayLayer"),
+    sprinklers: document.getElementById("sprinklerLayer"),
+    markers: document.getElementById("markerLayer"),
+    text: document.getElementById("textLayer")
+  };
+
+  let playTimer = null;
+
+  function sx(x) {
+    return x;
+  }
+
+  // The drawing uses bottom-left lawn coordinates for volunteers.
+  // SVG y grows downward, so all y coordinates are converted through sy().
+  function sy(y) {
+    return SIZE - y;
+  }
+
+  function clearLayer(layer) {
+    while (layer.firstChild) layer.removeChild(layer.firstChild);
+  }
+
+  function el(name, attrs = {}, text = "") {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+    Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+    if (text) node.textContent = text;
+    return node;
+  }
+
+  function addText(layer, x, y, text, className = "tiny", anchor = "middle") {
+    layer.appendChild(el("text", {
+      x: sx(x),
+      y: sy(y),
+      class: className,
+      "text-anchor": anchor
+    }, text));
+  }
+
+  function addBaseGrid() {
+    clearLayer(layers.base);
+
+    [9.5, 19, 28.5].forEach(v => {
+      layers.base.appendChild(el("line", { x1: v, y1: 0, x2: v, y2: SIZE, class: "marker-line" }));
+      layers.base.appendChild(el("line", { x1: 0, y1: sy(v), x2: SIZE, y2: sy(v), class: "marker-line" }));
+    });
+
+    for (let i = 0; i <= SIZE; i += 9.5) {
+      addText(layers.base, i, -1.1, `${i} m`, "axis-label");
+      addText(layers.base, -1.2, i, `${i} m`, "axis-label", "end");
+    }
+
+    addText(layers.base, 19, 39.9, "38 m square lawn", "axis-label");
+    addText(layers.base, 19, -2.4, "Grey border = surrounding paths", "axis-label");
+  }
+
+  function windShift() {
+    return windToggle.checked ? { dx: 1.15, dy: -0.75 } : { dx: 0, dy: 0 };
+  }
+
+  function addCircleSpray(x, y, radius, className = "spray") {
+    const wind = windShift();
+    const c = el("ellipse", {
+      cx: sx(x + wind.dx),
+      cy: sy(y + wind.dy),
+      rx: radius * (windToggle.checked ? 1.08 : 1),
+      ry: radius * (windToggle.checked ? 0.93 : 1),
+      class: className
+    });
+    layers.spray.appendChild(c);
+  }
+
+  function polarPoint(cx, cy, r, deg) {
+    const rad = deg * Math.PI / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  }
+
+  function addHalfSpray(x, y, directionDeg) {
+    const wind = windShift();
+    const cx = x + wind.dx;
+    const cy = y + wind.dy;
+    const start = directionDeg - 90;
+    const end = directionDeg + 90;
+    const a = polarPoint(cx, cy, RADIUS, start);
+    const b = polarPoint(cx, cy, RADIUS, end);
+
+    // Half-circle spray is drawn as a wedge facing into the lawn.
+    // This is deliberately simple: volunteers need to see the aim direction.
+    const d = [
+      `M ${sx(cx)} ${sy(cy)}`,
+      `L ${sx(a.x)} ${sy(a.y)}`,
+      `A ${RADIUS} ${RADIUS} 0 0 0 ${sx(b.x)} ${sy(b.y)}`,
+      "Z"
+    ].join(" ");
+
+    layers.spray.appendChild(el("path", { d, class: "spray inner" }));
+  }
+
+  function addSprinkler(x, y, label, edgeDirectionDeg = null) {
+    layers.sprinklers.appendChild(el("circle", {
+      cx: sx(x),
+      cy: sy(y),
+      r: 0.55,
+      class: "sprinkler"
+    }));
+
+    addText(layers.sprinklers, x, y - 1.15, label, "sprinkler-label");
+
+    if (edgeDirectionDeg !== null) {
+      const peg = polarPoint(x, y, 2, edgeDirectionDeg);
+      const end = polarPoint(x, y, 1.45, edgeDirectionDeg);
+
+      layers.markers.appendChild(el("circle", {
+        cx: sx(peg.x),
+        cy: sy(peg.y),
+        r: 0.32,
+        class: "ground-peg"
+      }));
+
+      layers.markers.appendChild(el("line", {
+        x1: sx(x),
+        y1: sy(y),
+        x2: sx(end.x),
+        y2: sy(end.y),
+        class: "arrow",
+        "marker-end": "url(#whiteArrowHead)"
+      }));
+
+      layers.markers.appendChild(el("line", {
+        x1: sx(x),
+        y1: sy(y),
+        x2: sx(peg.x),
+        y2: sy(peg.y),
+        stroke: "#111",
+        "stroke-width": "0.12",
+        "stroke-dasharray": "0.35 0.25"
+      }));
+
+      addText(layers.markers, peg.x, peg.y + 0.9, "aim peg", "tiny");
+    }
+  }
+
+  function addDryPatches(plan) {
+    clearLayer(layers.dry);
+    if (!dryToggle.checked) return;
+
+    if (plan === "existing") {
+      layers.dry.appendChild(el("rect", { x: 0.4, y: 0.4, width: 37.2, height: 2.2, class: "dry" }));
+      layers.dry.appendChild(el("rect", { x: 0.4, y: 35.4, width: 37.2, height: 2.2, class: "dry" }));
+      layers.dry.appendChild(el("rect", { x: 0.4, y: 0.4, width: 2.2, height: 37.2, class: "dry" }));
+      layers.dry.appendChild(el("rect", { x: 35.4, y: 0.4, width: 2.2, height: 37.2, class: "dry" }));
+
+      [[2.8, 2.8], [35.2, 2.8], [2.8, 35.2], [35.2, 35.2]].forEach(([x, y]) => {
+        layers.dry.appendChild(el("circle", { cx: sx(x), cy: sy(y), r: 3.2, class: "corner-dry" }));
+      });
+
+      addText(layers.dry, 19, 2.2, "weak edge band", "tiny");
+      addText(layers.dry, 19, 35.8, "weak edge band", "tiny");
+      addText(layers.dry, 4.5, 33.4, "dry corner risk", "tiny");
+      addText(layers.dry, 33.4, 4.6, "dry corner risk", "tiny");
+      return;
+    }
+
+    layers.dry.appendChild(el("rect", { x: 0.55, y: 0.55, width: 4.2, height: 4.2, rx: 0.7, class: "dry" }));
+    layers.dry.appendChild(el("rect", { x: 33.25, y: 0.55, width: 4.2, height: 4.2, rx: 0.7, class: "dry" }));
+    layers.dry.appendChild(el("rect", { x: 0.55, y: 33.25, width: 4.2, height: 4.2, rx: 0.7, class: "dry" }));
+    layers.dry.appendChild(el("rect", { x: 33.25, y: 33.25, width: 4.2, height: 4.2, rx: 0.7, class: "dry" }));
+    addText(layers.dry, 19, 19, "Sunday: inspect corners and dry patches", "tiny");
+  }
+
+  function existingPoints(dayIndex) {
+    const plus = [
+      { x: 19, y: 19, label: "C" },
+      { x: 19, y: 28, label: "N" },
+      { x: 19, y: 10, label: "S" },
+      { x: 28, y: 19, label: "E" },
+      { x: 10, y: 19, label: "W" }
+    ];
+
+    const diagonal = [
+      { x: 19, y: 19, label: "C" },
+      { x: 10, y: 28, label: "NW" },
+      { x: 28, y: 28, label: "NE" },
+      { x: 10, y: 10, label: "SW" },
+      { x: 28, y: 10, label: "SE" }
+    ];
+
+    return dayIndex % 2 === 0 ? plus : diagonal;
+  }
+
+  function drawExisting(dayIndex) {
+    addDryPatches("existing");
+    clearLayer(layers.spray);
+    clearLayer(layers.sprinklers);
+    clearLayer(layers.markers);
+    clearLayer(layers.text);
+
+    const points = existingPoints(dayIndex);
+    points.forEach((p, index) => {
+      addCircleSpray(p.x, p.y, RADIUS, index === 0 ? "spray inner" : "spray");
+    });
+
+    if (!overlapToggle.checked) {
+      [...layers.spray.children].forEach((node, index) => {
+        if (index > 0) node.classList.add("dimmed");
+      });
+    }
+
+    points.forEach(p => addSprinkler(p.x, p.y, p.label));
+
+    const name = dayIndex % 2 === 0 ? "plus pattern" : "diagonal / corner pattern";
+    addText(layers.text, 19, 41.1, `${days[dayIndex]} existing setup: ${name}`, "axis-label");
+    addText(layers.text, 19, -3.1, "Outer sprinklers are still about 10 m in, so corners are watered by the weak outer spray edge.", "axis-label");
+
+    if (windToggle.checked) {
+      addWindArrow("Wind nudges spray");
+    }
+
+    instructions.innerHTML = `
+      <p><strong>${days[dayIndex]} existing plan:</strong> use the ${name}.</p>
+      <p>Place one sprinkler at the centre marker and four around it.</p>
+      <p>Watch the orange edge and corner areas: these are where spray usually arrives weakest.</p>
+      <p>This view explains the problem the new plan is trying to solve.</p>
+    `;
+  }
+
+  function newSetup(dayIndex) {
+    const rows = [9.5, 19, 28.5];
+    const cols = [9.5, 19, 28.5];
+
+    if (dayIndex <= 2) {
+      const y = rows[dayIndex];
+      return {
+        code: `EW-${dayIndex + 1}`,
+        orientation: "East-West",
+        points: [
+          { x: 0.4, y, label: "Edge", type: "edge", dir: 0, timer: 1 },
+          { x: 10.2, y, label: "Inner", type: "inner", timer: 1 },
+          { x: 37.6, y, label: "Edge", type: "edge", dir: 180, timer: 2 },
+          { x: 27.8, y, label: "Inner", type: "inner", timer: 2 }
+        ]
+      };
+    }
+
+    if (dayIndex <= 5) {
+      const x = cols[dayIndex - 3];
+      return {
+        code: `NS-${dayIndex - 2}`,
+        orientation: "North-South",
+        points: [
+          { x, y: 0.4, label: "Edge", type: "edge", dir: 90, timer: 1 },
+          { x, y: 10.2, label: "Inner", type: "inner", timer: 1 },
+          { x, y: 37.6, label: "Edge", type: "edge", dir: 270, timer: 2 },
+          { x, y: 27.8, label: "Inner", type: "inner", timer: 2 }
+        ]
+      };
+    }
+
+    return {
+      code: "Sunday",
+      orientation: "Manual check",
+      points: []
+    };
+  }
+
+  function drawNew(dayIndex) {
+    addDryPatches("new");
+    clearLayer(layers.spray);
+    clearLayer(layers.sprinklers);
+    clearLayer(layers.markers);
+    clearLayer(layers.text);
+
+    const setup = newSetup(dayIndex);
+
+    if (dayIndex === 6) {
+      addText(layers.text, 19, 22, "Sunday: rest, inspect, or hand top-up corners", "sprinkler-label");
+      addText(layers.text, 19, 19.8, "Use this day to correct any dry patches after windy weather.", "tiny");
+      addText(layers.text, 19, 41.1, "Sunday manual correction day", "axis-label");
+
+      instructions.innerHTML = `
+        <p><strong>Sunday:</strong> no standard timer setup.</p>
+        <p>Walk the lawn, inspect corners and edge bands, and hand top-up any dry patches.</p>
+        <p>If the week has been windy, prioritise the downwind corners.</p>
+      `;
+      return;
+    }
+
+    setup.points.forEach(p => {
+      if (p.type === "edge") addHalfSpray(p.x, p.y, p.dir);
+      if (p.type === "inner") addCircleSpray(p.x, p.y, RADIUS, "spray");
+    });
+
+    if (!overlapToggle.checked) {
+      [...layers.spray.children].forEach((node, index) => {
+        if (index > 1) node.classList.add("dimmed");
+      });
+    }
+
+    setup.points.forEach(p => addSprinkler(p.x, p.y, p.label, p.type === "edge" ? p.dir : null));
+
+    setup.points
+      .filter(p => p.type === "edge")
+      .forEach(p => {
+        const peg = polarPoint(p.x, p.y, 2, p.dir);
+        addText(layers.text, (p.x + peg.x) / 2, (p.y + peg.y) / 2 - 0.9, "Put sprinkler on marker, point arrow at peg", "tiny");
+      });
+
+    const p1 = setup.points[0];
+    const p2 = setup.points[2];
+    layers.markers.appendChild(el("line", {
+      x1: sx(p1.x),
+      y1: sy(p1.y),
+      x2: sx(p2.x),
+      y2: sy(p2.y),
+      stroke: "rgba(0,0,0,0.28)",
+      "stroke-width": "0.16",
+      "stroke-dasharray": "0.6 0.35"
+    }));
+
+    addText(layers.text, 19, 41.1, `${days[dayIndex]} new setup: ${setup.code} (${setup.orientation})`, "axis-label");
+    addText(layers.text, 19, -3.1, "Edge heads spray inward; inner heads fill the middle. Move to the next marked line each day.", "axis-label");
+
+    if (windToggle.checked) {
+      addWindArrow("Wind bias is averaged by changing direction");
+    }
+
+    instructions.innerHTML = `
+      <p><strong>${days[dayIndex]}: place sprinklers on markers for ${setup.code}.</strong></p>
+      <p>Edge sprinklers point inward. Line up the sprinkler arrow with the ground direction peg.</p>
+      <p>Timer 1: 7:30 pm, edge 90 min, inner 180 min. Finishes at midnight.</p>
+      <p>Timer 2: 4:00 am, opposite edge 90 min, inner 180 min. Finishes at 8:30 am.</p>
+      <p>Use the same durations every time this timer setup runs.</p>
+    `;
+  }
+
+  function addWindArrow(label) {
+    layers.text.appendChild(el("line", {
+      x1: sx(4),
+      y1: sy(42),
+      x2: sx(11),
+      y2: sy(39.5),
+      class: "wind-arrow",
+      "marker-end": "url(#arrowHead)"
+    }));
+    addText(layers.text, 13.5, 40.1, label, "axis-label", "start");
+  }
+
+  function render() {
+    addBaseGrid();
+    const dayIndex = Number(daySelect.value);
+    const plan = planSelect.value;
+
+    if (plan === "existing") drawExisting(dayIndex);
+    else drawNew(dayIndex);
+  }
+
+  function startStopAnimation() {
+    if (playTimer) {
+      clearInterval(playTimer);
+      playTimer = null;
+      playBtn.textContent = "Play animation";
+      return;
+    }
+
+    playBtn.textContent = "Pause animation";
+    playTimer = setInterval(() => {
+      const current = Number(daySelect.value);
+      daySelect.value = String((current + 1) % 7);
+      render();
+    }, 1200);
+  }
+
+  planSelect.addEventListener("change", render);
+  daySelect.addEventListener("change", render);
+  windToggle.addEventListener("change", render);
+  dryToggle.addEventListener("change", render);
+  overlapToggle.addEventListener("change", render);
+  playBtn.addEventListener("click", startStopAnimation);
+
+  render();
+})();
+</script>
+</body>
+</html>
