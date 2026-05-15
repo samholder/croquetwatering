@@ -416,7 +416,6 @@
       <button id="playBtn" type="button">Play animation</button>
 
       <div class="toggle-grid">
-        <label class="check"><input id="windToggle" type="checkbox" checked> Show wind effect</label>
         <label class="check"><input id="dryToggle" type="checkbox" checked> Show dry patches</label>
         <label class="check"><input id="overlapToggle" type="checkbox" checked> Show spray overlap</label>
       </div>
@@ -444,7 +443,7 @@
       <p><strong>Existing plan problem:</strong> the centre and mid-lawn receive reasonable overlap, but the edge bands and corners only receive the weak outer edge of circular spray.</p>
       <p><strong>New plan benefit:</strong> edge sprinklers are placed near the boundary and spray inward, so the lawn edge is watered directly with less waste onto paths.</p>
       <p><strong>Timing:</strong> half-circle edge heads cover about half the area, so they run for 90 minutes. Full-circle inner heads run for 180 minutes.</p>
-      <p><strong>Wind:</strong> alternating East-West and North-South lines helps average out coastal wind bias through the week.</p>
+      <p><strong>Weekly movement:</strong> using East-West lines for three days and North-South lines for three days gives all four edges direct inward watering during the week.</p>
     </section>
   </aside>
 </main>
@@ -476,7 +475,6 @@
   const planSelect = document.getElementById("planSelect");
   const daySelect = document.getElementById("daySelect");
   const playBtn = document.getElementById("playBtn");
-  const windToggle = document.getElementById("windToggle");
   const dryToggle = document.getElementById("dryToggle");
   const overlapToggle = document.getElementById("overlapToggle");
   const instructions = document.getElementById("instructions");
@@ -539,17 +537,12 @@
     addText(layers.base, 19, -2.4, "Grey border = surrounding paths", "axis-label");
   }
 
-  function windShift() {
-    return windToggle.checked ? { dx: 1.15, dy: -0.75 } : { dx: 0, dy: 0 };
-  }
-
   function addCircleSpray(x, y, radius, className = "spray") {
-    const wind = windShift();
     const c = el("ellipse", {
-      cx: sx(x + wind.dx),
-      cy: sy(y + wind.dy),
-      rx: radius * (windToggle.checked ? 1.08 : 1),
-      ry: radius * (windToggle.checked ? 0.93 : 1),
+      cx: sx(x),
+      cy: sy(y),
+      rx: radius,
+      ry: radius,
       class: className
     });
     layers.spray.appendChild(c);
@@ -561,9 +554,8 @@
   }
 
   function addHalfSpray(x, y, directionDeg) {
-    const wind = windShift();
-    const cx = x + wind.dx;
-    const cy = y + wind.dy;
+    const cx = x;
+    const cy = y;
     const start = directionDeg - 90;
     const end = directionDeg + 90;
     const a = polarPoint(cx, cy, RADIUS, start);
@@ -697,10 +689,6 @@
     addText(layers.text, 19, 41.1, `${days[dayIndex]} existing setup: ${name}`, "axis-label");
     addText(layers.text, 19, -3.1, "Outer sprinklers are still about 10 m in, so corners are watered by the weak outer spray edge.", "axis-label");
 
-    if (windToggle.checked) {
-      addWindArrow("Wind nudges spray");
-    }
-
     instructions.innerHTML = `
       <p><strong>${days[dayIndex]} existing plan:</strong> use the ${name}.</p>
       <p>Place one sprinkler at the centre marker and four around it.</p>
@@ -727,10 +715,11 @@
       };
     }
 
-    if (dayIndex <= 5) {
-      const x = cols[dayIndex - 3];
+    if (dayIndex === 3 || dayIndex === 4 || dayIndex === 6) {
+      const nsIndex = dayIndex === 6 ? 2 : dayIndex - 3;
+      const x = cols[nsIndex];
       return {
-        code: `NS-${dayIndex - 2}`,
+        code: `NS-${nsIndex + 1}`,
         orientation: "North-South",
         points: [
           { x, y: 0.4, label: "Edge", type: "edge", dir: 90, timer: 1 },
@@ -742,7 +731,7 @@
     }
 
     return {
-      code: "Sunday",
+      code: "Saturday",
       orientation: "Manual check",
       points: []
     };
@@ -757,15 +746,15 @@
 
     const setup = newSetup(dayIndex);
 
-    if (dayIndex === 6) {
-      addText(layers.text, 19, 22, "Sunday: rest, inspect, or hand top-up corners", "sprinkler-label");
-      addText(layers.text, 19, 19.8, "Use this day to correct any dry patches after windy weather.", "tiny");
-      addText(layers.text, 19, 41.1, "Sunday manual correction day", "axis-label");
+    if (dayIndex === 5) {
+      addText(layers.text, 19, 22, "Saturday: rest, inspect, or hand top-up corners", "sprinkler-label");
+      addText(layers.text, 19, 19.8, "Use this day to correct any visible dry patches.", "tiny");
+      addText(layers.text, 19, 41.1, "Saturday manual correction day", "axis-label");
 
       instructions.innerHTML = `
-        <p><strong>Sunday:</strong> no standard timer setup.</p>
+        <p><strong>Saturday:</strong> no standard timer setup.</p>
         <p>Walk the lawn, inspect corners and edge bands, and hand top-up any dry patches.</p>
-        <p>If the week has been windy, prioritise the downwind corners.</p>
+        <p>Use this day to correct any visible corner or edge dry patches.</p>
       `;
       return;
     }
@@ -805,10 +794,6 @@
     addText(layers.text, 19, 41.1, `${days[dayIndex]} new setup: ${setup.code} (${setup.orientation})`, "axis-label");
     addText(layers.text, 19, -3.1, "Edge heads spray inward; inner heads fill the middle. Move to the next marked line each day.", "axis-label");
 
-    if (windToggle.checked) {
-      addWindArrow("Wind bias is averaged by changing direction");
-    }
-
     instructions.innerHTML = `
       <p><strong>${days[dayIndex]}: place sprinklers on markers for ${setup.code}.</strong></p>
       <p>Edge sprinklers point inward. Line up the sprinkler arrow with the ground direction peg.</p>
@@ -816,18 +801,6 @@
       <p>Timer 2: 4:00 am, opposite edge 90 min, inner 180 min. Finishes at 8:30 am.</p>
       <p>Use the same durations every time this timer setup runs.</p>
     `;
-  }
-
-  function addWindArrow(label) {
-    layers.text.appendChild(el("line", {
-      x1: sx(4),
-      y1: sy(42),
-      x2: sx(11),
-      y2: sy(39.5),
-      class: "wind-arrow",
-      "marker-end": "url(#arrowHead)"
-    }));
-    addText(layers.text, 13.5, 40.1, label, "axis-label", "start");
   }
 
   function render() {
@@ -857,7 +830,6 @@
 
   planSelect.addEventListener("change", render);
   daySelect.addEventListener("change", render);
-  windToggle.addEventListener("change", render);
   dryToggle.addEventListener("change", render);
   overlapToggle.addEventListener("change", render);
   playBtn.addEventListener("click", startStopAnimation);
