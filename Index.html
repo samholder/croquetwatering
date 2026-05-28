@@ -443,7 +443,7 @@
       <p><strong>Existing plan problem:</strong> the centre and mid-lawn receive reasonable overlap, but the edge bands and corners only receive the weak outer edge of circular spray.</p>
       <p><strong>New plan benefit:</strong> edge sprinklers are placed near the boundary and spray inward, so the lawn edge is watered directly with less waste onto paths.</p>
       <p><strong>Timing:</strong> half-circle edge heads cover about half the area, so they run for 90 minutes. Full-circle inner heads run for 180 minutes.</p>
-      <p><strong>Weekly movement:</strong> using East-West lines for three days and North-South lines for three days gives all four edges direct inward watering during the week.</p>
+      <p><strong>Weekly movement:</strong> Wednesday to Friday use West, Middle, then East North-South lines. Sunday to Tuesday use South, Middle, then North East-West lines. Saturday is the rest and correction day.</p>
     </section>
   </aside>
 </main>
@@ -642,7 +642,7 @@
     layers.dry.appendChild(el("rect", { x: 33.25, y: 0.55, width: 4.2, height: 4.2, rx: 0.7, class: "dry" }));
     layers.dry.appendChild(el("rect", { x: 0.55, y: 33.25, width: 4.2, height: 4.2, rx: 0.7, class: "dry" }));
     layers.dry.appendChild(el("rect", { x: 33.25, y: 33.25, width: 4.2, height: 4.2, rx: 0.7, class: "dry" }));
-    addText(layers.dry, 19, 19, "Sunday: inspect corners and dry patches", "tiny");
+    addText(layers.dry, 19, 19, "Saturday: inspect corners and dry patches", "tiny");
   }
 
   function existingPoints(dayIndex) {
@@ -698,13 +698,21 @@
   }
 
   function newSetup(dayIndex) {
-    const rows = [9.5, 19, 28.5];
-    const cols = [9.5, 19, 28.5];
+    const ewRowsByDay = {
+      6: { y: 9.5, code: "EW-South" },
+      0: { y: 19, code: "EW-Middle" },
+      1: { y: 28.5, code: "EW-North" }
+    };
+    const nsColsByDay = {
+      2: { x: 9.5, code: "NS-West" },
+      3: { x: 19, code: "NS-Middle" },
+      4: { x: 28.5, code: "NS-East" }
+    };
 
-    if (dayIndex <= 2) {
-      const y = rows[dayIndex];
+    if (ewRowsByDay[dayIndex]) {
+      const { y, code } = ewRowsByDay[dayIndex];
       return {
-        code: `EW-${dayIndex + 1}`,
+        code,
         orientation: "East-West",
         points: [
           { x: 0.4, y, label: "Edge", type: "edge", dir: 0, timer: 1 },
@@ -715,11 +723,10 @@
       };
     }
 
-    if (dayIndex === 3 || dayIndex === 4 || dayIndex === 6) {
-      const nsIndex = dayIndex === 6 ? 2 : dayIndex - 3;
-      const x = cols[nsIndex];
+    if (nsColsByDay[dayIndex]) {
+      const { x, code } = nsColsByDay[dayIndex];
       return {
-        code: `NS-${nsIndex + 1}`,
+        code,
         orientation: "North-South",
         points: [
           { x, y: 0.4, label: "Edge", type: "edge", dir: 90, timer: 1 },
