@@ -1,4 +1,4 @@
-<!doctype html>. 
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -293,10 +293,28 @@
     fill: none;
   }
 
-  .ground-peg {
-    fill: white;
+  .striped-leg-base {
+    stroke: white;
+    stroke-width: 0.72;
+    stroke-linecap: round;
+  }
+
+  .striped-leg {
     stroke: #111;
-    stroke-width: 0.2;
+    stroke-width: 0.52;
+    stroke-linecap: round;
+    stroke-dasharray: 0.45 0.32;
+  }
+
+  .position-cross-shadow {
+    stroke: #111;
+    stroke-width: 0.56;
+    stroke-linecap: round;
+  }
+
+  .position-cross {
+    stroke-width: 0.34;
+    stroke-linecap: round;
   }
 
   .wind-arrow {
@@ -385,6 +403,8 @@
       <span><i class="swatch" style="background: rgba(54,151,230,0.35)"></i>Spray</span>
       <span><i class="swatch" style="background: rgba(255,179,46,0.7)"></i>Likely dry edge/corner areas</span>
       <span><i class="swatch" style="background: #1f2933"></i>Sprinkler head</span>
+      <span><i class="swatch" style="background: #ffd83d"></i>Yellow crosses: North-South</span>
+      <span><i class="swatch" style="background: white"></i>White crosses: East-West</span>
     </div>
   </section>
 
@@ -396,7 +416,7 @@
         <label for="planSelect">Plan</label>
         <select id="planSelect">
           <option value="existing">Existing alternate five-sprinkler plan</option>
-          <option value="new">New four-sprinkler edge-and-inner plan</option>
+          <option value="new" selected>New four-sprinkler edge-and-inner plan</option>
         </select>
       </div>
 
@@ -520,6 +540,33 @@
     }, text));
   }
 
+  function addPositionCross(x, y, colour) {
+    const size = 0.82;
+    const lines = [
+      { x1: x - size, y1: y - size, x2: x + size, y2: y + size },
+      { x1: x - size, y1: y + size, x2: x + size, y2: y - size }
+    ];
+
+    // Coloured crosses represent the physical ground marks volunteers use.
+    // Yellow marks are for North-South setups; white marks are for East-West.
+    lines.forEach(line => layers.markers.appendChild(el("line", {
+      x1: sx(line.x1),
+      y1: sy(line.y1),
+      x2: sx(line.x2),
+      y2: sy(line.y2),
+      class: "position-cross-shadow"
+    })));
+
+    lines.forEach(line => layers.markers.appendChild(el("line", {
+      x1: sx(line.x1),
+      y1: sy(line.y1),
+      x2: sx(line.x2),
+      y2: sy(line.y2),
+      class: "position-cross",
+      stroke: colour
+    })));
+  }
+
   function addBaseGrid() {
     clearLayer(layers.base);
 
@@ -584,14 +631,16 @@
     addText(layers.sprinklers, x, y - 1.15, label, "sprinkler-label");
 
     if (edgeDirectionDeg !== null) {
-      const peg = polarPoint(x, y, 2, edgeDirectionDeg);
-      const end = polarPoint(x, y, 1.45, edgeDirectionDeg);
+      const end = polarPoint(x, y, 1.9, edgeDirectionDeg);
 
-      layers.markers.appendChild(el("circle", {
-        cx: sx(peg.x),
-        cy: sy(peg.y),
-        r: 0.32,
-        class: "ground-peg"
+      // Edge sprinklers have one striped leg. That leg shows the direction
+      // the half-circle spray should face: inward across the lawn.
+      layers.markers.appendChild(el("line", {
+        x1: sx(x),
+        y1: sy(y),
+        x2: sx(end.x),
+        y2: sy(end.y),
+        class: "striped-leg-base"
       }));
 
       layers.markers.appendChild(el("line", {
@@ -599,21 +648,9 @@
         y1: sy(y),
         x2: sx(end.x),
         y2: sy(end.y),
-        class: "arrow",
-        "marker-end": "url(#whiteArrowHead)"
+        class: "striped-leg",
+        "marker-end": "url(#arrowHead)"
       }));
-
-      layers.markers.appendChild(el("line", {
-        x1: sx(x),
-        y1: sy(y),
-        x2: sx(peg.x),
-        y2: sy(peg.y),
-        stroke: "#111",
-        "stroke-width": "0.12",
-        "stroke-dasharray": "0.35 0.25"
-      }));
-
-      addText(layers.markers, peg.x, peg.y + 0.9, "aim peg", "tiny");
     }
   }
 
@@ -715,10 +752,10 @@
         code,
         orientation: "East-West",
         points: [
-          { x: 0.4, y, label: "Edge", type: "edge", dir: 0, timer: 1 },
-          { x: 10.2, y, label: "Inner", type: "inner", timer: 1 },
-          { x: 37.6, y, label: "Edge", type: "edge", dir: 180, timer: 2 },
-          { x: 27.8, y, label: "Inner", type: "inner", timer: 2 }
+          { x: 0.4, y, label: "Edge", type: "edge", dir: 0 },
+          { x: 10.2, y, label: "Inner", type: "inner" },
+          { x: 37.6, y, label: "Edge", type: "edge", dir: 180 },
+          { x: 27.8, y, label: "Inner", type: "inner" }
         ]
       };
     }
@@ -729,10 +766,10 @@
         code,
         orientation: "North-South",
         points: [
-          { x, y: 0.4, label: "Edge", type: "edge", dir: 90, timer: 1 },
-          { x, y: 10.2, label: "Inner", type: "inner", timer: 1 },
-          { x, y: 37.6, label: "Edge", type: "edge", dir: 270, timer: 2 },
-          { x, y: 27.8, label: "Inner", type: "inner", timer: 2 }
+          { x, y: 0.4, label: "Edge", type: "edge", dir: 90 },
+          { x, y: 10.2, label: "Inner", type: "inner" },
+          { x, y: 37.6, label: "Edge", type: "edge", dir: 270 },
+          { x, y: 27.8, label: "Inner", type: "inner" }
         ]
       };
     }
@@ -759,7 +796,7 @@
       addText(layers.text, 19, 41.1, "Saturday manual correction day", "axis-label");
 
       instructions.innerHTML = `
-        <p><strong>Saturday:</strong> no standard timer setup.</p>
+        <p><strong>Saturday:</strong> no standard sprinkler setup.</p>
         <p>Walk the lawn, inspect corners and edge bands, and hand top-up any dry patches.</p>
         <p>Use this day to correct any visible corner or edge dry patches.</p>
       `;
@@ -777,13 +814,15 @@
       });
     }
 
+    const crossColour = setup.orientation === "North-South" ? "#ffd83d" : "#ffffff";
+    setup.points.forEach(p => addPositionCross(p.x, p.y, crossColour));
     setup.points.forEach(p => addSprinkler(p.x, p.y, p.label, p.type === "edge" ? p.dir : null));
 
     setup.points
       .filter(p => p.type === "edge")
       .forEach(p => {
-        const peg = polarPoint(p.x, p.y, 2, p.dir);
-        addText(layers.text, (p.x + peg.x) / 2, (p.y + peg.y) / 2 - 0.9, "Put sprinkler on marker, point arrow at peg", "tiny");
+        const legEnd = polarPoint(p.x, p.y, 2, p.dir);
+        addText(layers.text, (p.x + legEnd.x) / 2, (p.y + legEnd.y) / 2 - 0.9, "Striped leg points inward", "tiny");
       });
 
     const p1 = setup.points[0];
@@ -801,12 +840,12 @@
     addText(layers.text, 19, 41.1, `${days[dayIndex]} new setup: ${setup.code} (${setup.orientation})`, "axis-label");
     addText(layers.text, 19, -3.1, "Edge heads spray inward; inner heads fill the middle. Move to the next marked line each day.", "axis-label");
 
+    const markerText = setup.orientation === "North-South" ? "yellow crosses" : "white crosses";
     instructions.innerHTML = `
-      <p><strong>${days[dayIndex]}: place sprinklers on markers for ${setup.code}.</strong></p>
-      <p>Edge sprinklers point inward. Line up the sprinkler arrow with the ground direction peg.</p>
-      <p>Timer 1: 7:30 pm, edge 90 min, inner 180 min. Finishes at midnight.</p>
-      <p>Timer 2: 4:00 am, opposite edge 90 min, inner 180 min. Finishes at 8:30 am.</p>
-      <p>Use the same durations every time this timer setup runs.</p>
+      <p><strong>${days[dayIndex]}: put the sprinklers out on the ${markerText} for ${setup.code}.</strong></p>
+      <p>${setup.orientation} orientation: use the ${markerText}.</p>
+      <p>Edge sprinklers point inward. Use the striped leg on the sprinkler to show the direction of spray.</p>
+      <p>No timer setting is needed.</p>
     `;
   }
 
